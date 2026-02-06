@@ -8,7 +8,4 @@ features:
   - title: 字符串
     details: KMP...
     link: ./字符串/
-  - title: 测试
-    details: 测试...
-    link: ./测试.md
 ---
