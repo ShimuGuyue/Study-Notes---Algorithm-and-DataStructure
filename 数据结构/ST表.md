@@ -30,7 +30,7 @@ for (int j = 1; j < m; ++j)
     int len = 1 << (j - 1);
     for (int i = 0; i + len * 2 - 1 < n; ++i)
     {
-        st[i][j] = st[i][j - 1] + st[i + len][j - 1];
+        st[i][j] = merge(i, i + len, j - 1);
     }
 }
 ```
@@ -57,5 +57,67 @@ int query(int l, int r)
     // merge(i, j, power) 用于规定贡献合并结果
     return merge(l, r - len + 1, power);
 }
+```
+
+
+
+## 模板
+
+```cpp
+class SparseTable
+{
+private:
+    std::vector<int> v_;
+    std::vector<std::vector<int>> table_;
+
+public:
+    SparseTable(const std::vector<int>& v)
+    {
+        build(v);
+    }
+
+public:
+    int query(const int l, const int r)
+    {
+        const int power{ static_cast<int>(log2(r - l + 1)) };
+        const int len{ 1 << power };
+        return merge(l, r - len + 1, power);
+    }
+
+private:
+    void build(const std::vector<int>& v)
+    {
+        v_ = v;
+
+        const int n{ static_cast<int>(v.size()) };
+        const int m{ static_cast<int>(std::log2(n)) + 1 };
+        table_.assign(n, std::vector<int>(m));
+
+        for (int i{ 0 }; i < n; ++i)
+        {
+            table_[i][0] = contribute(i);
+        }
+        for (int j{ 1 }; j < m; ++j)
+        {
+            int len{ 1 << (j - 1) };
+            for (int i{ 0 }; i + len * 2 - 1 < n; ++i)
+            {
+                table_[i][j] = merge(i, i + len, j - 1);
+            }
+        }
+    }
+
+    int contribute(const int index)
+    {
+        // TODO: 规定初始贡献值
+        return ;
+    }
+
+    int merge(const int i1, const int i2, const int j)
+    {
+        // TODO: 规定贡献值合并结果
+        return ;
+    }
+};
 ```
 
