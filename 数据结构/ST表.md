@@ -77,7 +77,7 @@ public:
     }
 
 public:
-    int query(const int l, const int r)
+    int query(const int l, const int r) const
     {
         const int power{ static_cast<int>(log2(r - l + 1)) };
         const int len{ 1 << power };
@@ -107,13 +107,13 @@ private:
         }
     }
 
-    int contribute(const int index)
+    int contribute(const int index) const
     {
         // TODO: 规定初始贡献值
         return ;
     }
 
-    int merge(const int i1, const int i2, const int j)
+    int merge(const int i1, const int i2, const int j) const
     {
         // TODO: 规定贡献值合并结果
         return ;
