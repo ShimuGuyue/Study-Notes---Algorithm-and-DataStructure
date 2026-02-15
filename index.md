@@ -5,6 +5,9 @@ hero:
   name: 算法和数据结构
 
 features:
+  - title: 数学
+    details: 数论...
+    link: ./数学/
   - title: 数据结构
     details: ST表...
     link: ./数据结构/
