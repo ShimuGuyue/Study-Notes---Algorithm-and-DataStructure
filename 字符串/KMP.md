@@ -159,8 +159,11 @@ vector<array<int, 26>> build_next(string pattern, vector<int> fails)
     }
     return nexts;
 }
-
 ```
+
+
+
+匹配过程不同于朴素 KMP 的指针跳转，文本串指针向前走的同时，模式串指针根据预处理好的 `next` 数组一步到位即可。
 
 ```cpp
 vector<int> kmp(string text, string pattern)
@@ -179,5 +182,203 @@ vector<int> kmp(string text, string pattern)
     }
     return indexs;
 }
+```
+
+
+
+## 模板
+
+```cpp
+class KMP
+{
+private:
+    std::string pattern_;
+    std::vector<int> fails_;
+
+public:
+    KMP(const std::string& pattern)
+    {
+        build(pattern);
+    }
+
+public:
+    static std::vector<int> get_borders(const std::string& s)
+    {
+        const int n{ static_cast<int>(s.size()) };
+        std::vector<int> borders(n, 0);
+        for (int i{ 1 }; i < n; ++i)
+        {
+            int border{ borders[i - 1] };
+            while (border != 0 && s[border] != s[i])
+            {
+                border = borders[border - 1];
+            }
+            if (s[border] == s[i])
+                ++border;
+            borders[i] = border;
+        }
+        return borders;
+    }
+
+public:
+    int match(const std::string& text) const
+    {
+        const int n{ static_cast<int>(text.size()) };
+        const int m{ static_cast<int>(pattern_.size()) };
+
+        int i{ 0 }, j{ 0 };
+        while (i < n)
+        {
+            if (text[i] == pattern_[j])
+            {
+                ++i; ++j;
+                if (j == m)
+                    return i - m;
+            }
+            else
+            {
+                if (j == 0)
+                    ++i;
+                else
+                    j = fails_[j - 1];
+            }
+        }
+        return -1;
+    }
+
+    std::vector<int> match_all(const std::string& text, const int reserve = 0) const
+    {
+        std::vector<int> ans;
+        ans.reserve(reserve);
+
+        const int n{ static_cast<int>(text.size()) };
+        const int m{ static_cast<int>(pattern_.size()) };
+
+        int i{ 0 }, j{ 0 };
+        while (i < n)
+        {
+            if (text[i] == pattern_[j])
+            {
+                ++i;++j;
+                if (j == m)
+                {
+                    ans.push_back(i - m);
+                    j = fails_[j - 1];
+                }
+            }
+            else
+            {
+                if (j == 0)
+                    ++i;
+                else
+                    j = fails_[j - 1];
+            }
+        }
+        return ans;
+    }
+
+private:
+    void build(const std::string& pattern)
+    {
+        pattern_ = pattern;
+        fails_ = get_borders(pattern);
+    }
+};
+```
+
+
+
+----
+
+```cpp
+class KMPAM
+{
+private:
+    std::vector<int> fails_;
+    std::vector<std::array<int, 26>> nexts_;
+
+public:
+    KMPAM(const std::string& pattern)
+    {
+        build(pattern);
+    }
+
+public:
+    static std::vector<int> get_borders(const std::string& s)
+    {
+        const int n{ static_cast<int>(s.size()) };
+        std::vector<int> borders(n, 0);
+        for (int i{ 1 }; i < n; ++i)
+        {
+            int border{ borders[i - 1] };
+            while (border != 0 && s[border] != s[i])
+            {
+                border = borders[border - 1];
+            }
+            if (s[border] == s[i])
+                ++border;
+            borders[i] = border;
+        }
+        return borders;
+    }
+
+public:
+    int match(const std::string& text) const
+    {
+        int n{ static_cast<int>(text.size()) };
+        int m{ static_cast<int>(fails_.size()) };
+
+        int index{ 0 };
+        for (int i{ 0 }; i < n; ++i)
+        {
+            index = nexts_[index][text[i] - 'a'];
+            if (index == m)
+                return i - m + 1;
+        }
+        return -1;
+    }
+
+    std::vector<int> match_all(const std::string& text, const int reserve = 0) const
+    {
+        int n{ static_cast<int>(text.size()) };
+        int m{ static_cast<int>(fails_.size()) };
+
+        std::vector<int> ans;
+
+        int index{ 0 };
+        for (int i{ 0 }; i < n; ++i)
+        {
+            index = nexts_[index][text[i] - 'a'];
+            if (index == m)
+                ans.push_back(i - m + 1);
+        }
+        return ans;
+    }
+
+private:
+    void build(const std::string& pattern)
+    {
+        fails_ = get_borders(pattern);
+
+        const int n{ static_cast<int>(pattern.size()) };
+        nexts_.assign(n + 1, { });
+        for (int i{ 0 }; i <= n; ++i)
+        {
+            for (int index{ 0 }; index < 26; ++index)
+            {
+                if (index + 'a' == pattern[i])
+                    if (i == n)
+                        nexts_[i][index] = nexts_[fails_[i - 1]][index];
+                    else
+                        nexts_[i][index] = i + 1;
+                else
+                    if (i == 0)
+                        nexts_[i][index] = 0;
+                    else
+                        nexts_[i][index] = nexts_[fails_[i - 1]][index];
+            }
+        }
+    }
+};
 ```
 
