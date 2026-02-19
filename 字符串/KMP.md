@@ -53,8 +53,6 @@ vector<int> get_borders(string s)
 }
 ```
 
-
-
 ## KMP匹配
 
 KMP 算法中，使用两个指针分别表示主串和模式串当前遍历到的位置。与暴力匹配不同，KMP 算法中主串指针不断前进，仅有模式串的指针在字符匹配失败时进行回溯。
@@ -120,71 +118,6 @@ int kmp(string text, string pattern)
     return -1;
 }
 ```
-
-
-
-## KMP自动机
-
-KMP自动机是一种有限状态自动机，意在预处理出所有位置匹配任意字符集内任意字符的情况，在 $O(1)$ 时间内快速完成单次跳转。
-
-由于 KMP 算法在匹配失败时需要沿 border 链多次跳转，在极端数据情况下匹配失败时，模式串指针可能会连续回退多次导致匹配单个字符时的时间发生波动，因此可以根据 border 树上的节点进行预处理，找出当已经匹配成功任意数量个字符时，再匹配下一个字符时，对于可能出现的任意字符，模式串指针应该跳转到什么位置，以便在匹配时一步到位，无需多次跳转。将单次匹配的时间复杂度从均摊 $O(1)$ 优化为严格 $O(1)$。
-
-预处理时，需要一个一维数组 `fail` 来存储每个节点的最大 border，以及一个二维数组 `next` 来表示每个位置 $i$ 匹配到每个字符 $c$ 时应跳转的位置 `next[i][c]`。
-
-**逐字符**对 next 数组进行预处理时，当匹配到第 $i$ 个字符时，若匹配新字符 $ch$ 成功时，设置 `next[i][ch] = i + 1`，成功匹配的字符数计数加一，模式串匹配的指针后移；否则，$i$ 随 $i - 1$ 处的 fail 链跳转。由于 `fail[i]` 处的信息已被处理过且包含所有更小 border 处的信息，所以 fail 链只需一次跳转即可得到 `next[i][ch]` 指向的位置，即 `next[i][ch] = next[fail[i - 1]][ch]`。
-
-对于模式串的匹配指针 $i$，正在匹配第 $i$ 个位置同样也可以表示已经匹配了 $i$ 个字符。而对于一个长度为 $n$ 的模式串，统计计数共计有 $n + 1$ 种不同情况。当需要匹配所有出现的字符串时，应将 next 数组的第一维长度设为 $n + 1$，用 `nexts[n][ch]` 表示已经匹配成功一个模式串之后再匹配下一个模式串应该跳转到哪个位置，以便匹配所有模式串的位置。~~或者也可以不额外开一个位置，匹配完成时根据 fail 链回退亦可。~~
-
-```cpp
-vector<array<int, 26>> build_next(string pattern, vector<int> fails)
-{
-    int m = pattern.length();
-
-    vector<array<int, 26>> nexts(m + 1);
-    for (int i = 0; i <= m; ++i)
-    {
-        for (int index = 0; index < 26; ++index)
-        {
-            if (index + 'a' == pattern[i])
-                if (i == m) //  完全匹配成功尝试下一次匹配
-                    nexts[i][index] = nexts[fails[i - 1]][index];
-                else
-                    nexts[i][index] = i + 1;
-            else
-                if (i == 0)
-                    nexts[i][index] = 0;
-                else
-                    nexts[i][index] = nexts[fails[i - 1]][index];
-        }
-    }
-    return nexts;
-}
-```
-
-
-
-匹配过程不同于朴素 KMP 的指针跳转，文本串指针向前走的同时，模式串指针根据预处理好的 `next` 数组一步到位即可。
-
-```cpp
-vector<int> kmp(string text, string pattern)
-{
-    int n = text.length();
-    int m = pattern.length();
-
-    vector<int> indexs;
-
-    int index = 0;
-    for (int i = 0; i < n; ++i)
-    {
-        index = nexts[index][text[i] - 'a'];
-        if (index == m)    // 若只找第一个出现位置则直接返回
-             indexs.push_back(i - m + 1);
-    }
-    return indexs;
-}
-```
-
-
 
 ## 模板
 
@@ -286,9 +219,68 @@ private:
 };
 ```
 
+# KMP自动机
+
+KMP自动机是一种有限状态自动机，意在预处理出所有位置匹配任意字符集内任意字符的情况，在 $O(1)$ 时间内快速完成单次跳转。
+
+由于 KMP 算法在匹配失败时需要沿 border 链多次跳转，在极端数据情况下匹配失败时，模式串指针可能会连续回退多次导致匹配单个字符时的时间发生波动，因此可以根据 border 树上的节点进行预处理，找出当已经匹配成功任意数量个字符时，再匹配下一个字符时，对于可能出现的任意字符，模式串指针应该跳转到什么位置，以便在匹配时一步到位，无需多次跳转。将单次匹配的时间复杂度从均摊 $O(1)$ 优化为严格 $O(1)$。
+
+预处理时，需要一个一维数组 `fail` 来存储每个节点的最大 border，以及一个二维数组 `next` 来表示每个位置 $i$ 匹配到每个字符 $c$ 时应跳转的位置 `next[i][c]`。
+
+**逐字符**对 next 数组进行预处理时，当匹配到第 $i$ 个字符时，若匹配新字符 $ch$ 成功时，设置 `next[i][ch] = i + 1`，成功匹配的字符数计数加一，模式串匹配的指针后移；否则，$i$ 随 $i - 1$ 处的 fail 链跳转。由于 `fail[i]` 处的信息已被处理过且包含所有更小 border 处的信息，所以 fail 链只需一次跳转即可得到 `next[i][ch]` 指向的位置，即 `next[i][ch] = next[fail[i - 1]][ch]`。
+
+对于模式串的匹配指针 $i$，正在匹配第 $i$ 个位置同样也可以表示已经匹配了 $i$ 个字符。而对于一个长度为 $n$ 的模式串，统计计数共计有 $n + 1$ 种不同情况。当需要匹配所有出现的字符串时，应将 next 数组的第一维长度设为 $n + 1$，用 `nexts[n][ch]` 表示已经匹配成功一个模式串之后再匹配下一个模式串应该跳转到哪个位置，以便匹配所有模式串的位置。~~或者也可以不额外开一个位置，匹配完成时根据 fail 链回退亦可。~~
+
+```cpp
+vector<array<int, 26>> build_next(string pattern, vector<int> fails)
+{
+    int m = pattern.length();
+
+    vector<array<int, 26>> nexts(m + 1);
+    for (int i = 0; i <= m; ++i)
+    {
+        for (int index = 0; index < 26; ++index)
+        {
+            if (index + 'a' == pattern[i])
+                if (i == m) //  完全匹配成功尝试下一次匹配
+                    nexts[i][index] = nexts[fails[i - 1]][index];
+                else
+                    nexts[i][index] = i + 1;
+            else
+                if (i == 0)
+                    nexts[i][index] = 0;
+                else
+                    nexts[i][index] = nexts[fails[i - 1]][index];
+        }
+    }
+    return nexts;
+}
+```
 
 
-----
+
+匹配过程不同于朴素 KMP 的指针跳转，文本串指针向前走的同时，模式串指针根据预处理好的 `next` 数组一步到位即可。
+
+```cpp
+vector<int> kmp(string text, string pattern)
+{
+    int n = text.length();
+    int m = pattern.length();
+
+    vector<int> indexs;
+
+    int index = 0;
+    for (int i = 0; i < n; ++i)
+    {
+        index = nexts[index][text[i] - 'a'];
+        if (index == m)    // 若只找第一个出现位置则直接返回
+             indexs.push_back(i - m + 1);
+    }
+    return indexs;
+}
+```
+
+## 模板
 
 ```cpp
 class KMPAM
